@@ -172,8 +172,8 @@ this.autoSaveInterval = setInterval(() => {
 
 如有问题或建议，请通过以下方式联系：
 - 💬 提交Issue：[GitHub Issues](https://github.com/ajkdfe2e2e/smart-notepad/issues)
-- 📧 发送邮件：yangbowen@example.com
-- 🐦 社交媒体：@your_username
+- 📧 发送邮件：2035325567@qq.com
+- 🐦 社交媒体 倾覆
 
 ## 🙏 致谢
 
