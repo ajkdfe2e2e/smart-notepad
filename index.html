@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能记事本</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="header-content">
+                <h1><i class="fas fa-sticky-note"></i> 智能记事本</h1>
+                <div class="header-actions">
+                    <button id="theme-toggle" class="btn-icon" title="切换主题">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button id="search-toggle" class="btn-icon" title="搜索">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="search-bar" id="search-bar">
+                <input type="text" id="search-input" placeholder="搜索笔记...">
+                <button id="clear-search" class="btn-icon">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <button id="new-note-btn" class="btn-primary">
+                        <i class="fas fa-plus"></i> 新建笔记
+                    </button>
+                </div>
+                <div class="notes-list" id="notes-list">
+                    <!-- 笔记列表将在这里动态生成 -->
+                </div>
+            </aside>
+
+            <section class="editor-section">
+                <div class="editor-header">
+                    <input type="text" id="note-title" placeholder="输入笔记标题..." class="title-input">
+                    <div class="editor-actions">
+                        <button id="save-note" class="btn-success" title="保存">
+                            <i class="fas fa-save"></i>
+                        </button>
+                        <button id="delete-note" class="btn-danger" title="删除">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        <button id="export-note" class="btn-secondary" title="导出">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="editor-toolbar">
+                    <button class="toolbar-btn" data-action="bold" title="粗体">
+                        <i class="fas fa-bold"></i>
+                    </button>
+                    <button class="toolbar-btn" data-action="italic" title="斜体">
+                        <i class="fas fa-italic"></i>
+                    </button>
+                    <button class="toolbar-btn" data-action="underline" title="下划线">
+                        <i class="fas fa-underline"></i>
+                    </button>
+                    <div class="toolbar-divider"></div>
+                    <button class="toolbar-btn" data-action="insertUnorderedList" title="无序列表">
+                        <i class="fas fa-list-ul"></i>
+                    </button>
+                    <button class="toolbar-btn" data-action="insertOrderedList" title="有序列表">
+                        <i class="fas fa-list-ol"></i>
+                    </button>
+                    <div class="toolbar-divider"></div>
+                    <button class="toolbar-btn" data-action="undo" title="撤销">
+                        <i class="fas fa-undo"></i>
+                    </button>
+                    <button class="toolbar-btn" data-action="redo" title="重做">
+                        <i class="fas fa-redo"></i>
+                    </button>
+                </div>
+                <div class="editor-container">
+                    <div id="note-editor" class="note-editor" contenteditable="true" 
+                         placeholder="在这里开始写作...">
+                    </div>
+                </div>
+                <div class="editor-footer">
+                    <div class="word-count">
+                        字数: <span id="word-count">0</span>
+                    </div>
+                    <div class="last-saved">
+                        最后保存: <span id="last-saved">从未保存</span>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div class="modal" id="confirm-modal">
+        <div class="modal-content">
+            <h3>确认删除</h3>
+            <p>确定要删除这篇笔记吗？此操作无法撤销。</p>
+            <div class="modal-actions">
+                <button id="confirm-delete" class="btn-danger">删除</button>
+                <button id="cancel-delete" class="btn-secondary">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
