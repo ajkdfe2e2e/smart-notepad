@@ -1,1 +1,346 @@
-class NotePad{constructor(){this.notes=JSON.parse(localStorage.getItem('notes'))||[];this.currentNoteId=null;this.isEditing=false;this.autoSaveInterval=null;this.initializeElements();this.bindEvents();this.loadNotes();this.createDefaultNote()}initializeElements(){this.notesList=document.getElementById('notes-list');this.noteTitle=document.getElementById('note-title');this.noteEditor=document.getElementById('note-editor');this.wordCount=document.getElementById('word-count');this.lastSaved=document.getElementById('last-saved');this.newNoteBtn=document.getElementById('new-note-btn');this.saveNoteBtn=document.getElementById('save-note');this.deleteNoteBtn=document.getElementById('delete-note');this.exportNoteBtn=document.getElementById('export-note');this.themeToggle=document.getElementById('theme-toggle');this.searchToggle=document.getElementById('search-toggle');this.searchInput=document.getElementById('search-input');this.clearSearch=document.getElementById('clear-search');this.searchBar=document.getElementById('search-bar');this.toolbarBtns=document.querySelectorAll('.toolbar-btn');this.confirmModal=document.getElementById('confirm-modal');this.confirmDelete=document.getElementById('confirm-delete');this.cancelDelete=document.getElementById('cancel-delete')}bindEvents(){this.noteTitle.addEventListener('input',()=>this.handleNoteChange());this.noteEditor.addEventListener('input',()=>this.handleNoteChange());this.noteEditor.addEventListener('keyup',()=>this.updateWordCount());this.newNoteBtn.addEventListener('click',()=>this.createNewNote());this.saveNoteBtn.addEventListener('click',()=>this.saveCurrentNote());this.deleteNoteBtn.addEventListener('click',()=>this.showDeleteConfirm());this.exportNoteBtn.addEventListener('click',()=>this.exportCurrentNote());this.themeToggle.addEventListener('click',()=>this.toggleTheme());this.searchToggle.addEventListener('click',()=>this.toggleSearch());this.searchInput.addEventListener('input',(e)=>this.searchNotes(e.target.value));this.clearSearch.addEventListener('click',()=>this.clearSearchInput());this.toolbarBtns.forEach(btn=>{btn.addEventListener('click',(e)=>this.handleToolbarAction(e))});this.confirmDelete.addEventListener('click',()=>this.deleteCurrentNote());this.cancelDelete.addEventListener('click',()=>this.hideDeleteConfirm());document.addEventListener('keydown',(e)=>this.handleKeyboardShortcut(e));window.addEventListener('beforeunload',()=>this.saveCurrentNote());this.startAutoSave()}createDefaultNote(){if(this.notes.length===0){const defaultNote={id:this.generateId(),title:'欢迎使用智能记事本',content:'这是你的第一条笔记！你可以：\n\n• 创建新笔记\n• 编辑现有笔记\n• 搜索笔记内容\n• 导出笔记\n• 切换主题模式\n\n开始记录你的想法吧！',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};this.notes.push(defaultNote);this.saveNotes()}}generateId(){return Date.now().toString(36)+Math.random().toString(36).substr(2)}loadNotes(){this.renderNotesList();if(this.notes.length>0){this.loadNote(this.notes[0].id)}}renderNotesList(notesToRender=this.notes){this.notesList.innerHTML='';notesToRender.forEach(note=>{const noteElement=this.createNoteListItem(note);this.notesList.appendChild(noteElement)})}createNoteListItem(note){const noteElement=document.createElement('div');noteElement.className='note-item';noteElement.dataset.noteId=note.id;const preview=this.getTextPreview(note.content);const date=this.formatDate(note.updatedAt);noteElement.innerHTML=`<div class="note-item-title">${note.title||'无标题'}</div><div class="note-item-preview">${preview}</div><div class="note-item-date">${date}</div>`;noteElement.addEventListener('click',()=>this.loadNote(note.id));return noteElement}getTextPreview(content){const text=content.replace(/<[^>]*>/g,'').replace(/\n/g,' ');return text.length>100?text.substring(0,100)+'...':text}formatDate(dateString){const date=new Date(dateString);const now=new Date();const diffTime=Math.abs(now-date);const diffDays=Math.ceil(diffTime/(1000*60*60*24));if(diffDays===1){return'今天'}else if(diffDays===2){return'昨天'}else if(diffDays<=7){return`${diffDays-1}天前`}else{return date.toLocaleDateString('zh-CN')}}loadNote(noteId){const note=this.notes.find(n=>n.id===noteId);if(!note)return;this.currentNoteId=noteId;this.noteTitle.value=note.title||'';this.noteEditor.innerHTML=note.content||'';this.updateActiveNote();this.updateWordCount();this.updateLastSaved(note.updatedAt);this.isEditing=false}updateActiveNote(){document.querySelectorAll('.note-item').forEach(item=>{item.classList.remove('active')});const activeItem=document.querySelector(`[data-note-id="${this.currentNoteId}"]`);if(activeItem){activeItem.classList.add('active')}}createNewNote(){if(this.isEditing){this.saveCurrentNote()}const newNote={id:this.generateId(),title:'',content:'',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};this.notes.unshift(newNote);this.saveNotes();this.renderNotesList();this.loadNote(newNote.id);this.noteTitle.focus()}handleNoteChange(){this.isEditing=true;this.updateWordCount()}saveCurrentNote(){if(!this.currentNoteId)return;const note=this.notes.find(n=>n.id===this.currentNoteId);if(!note)return;note.title=this.noteTitle.value.trim()||'无标题';note.content=this.noteEditor.innerHTML;note.updatedAt=new Date().toISOString();this.saveNotes();this.renderNotesList();this.updateActiveNote();this.updateLastSaved(note.updatedAt);this.isEditing=false}saveNotes(){localStorage.setItem('notes',JSON.stringify(this.notes))}showDeleteConfirm(){if(!this.currentNoteId)return;this.confirmModal.classList.add('active')}hideDeleteConfirm(){this.confirmModal.classList.remove('active')}deleteCurrentNote(){if(!this.currentNoteId)return;this.notes=this.notes.filter(n=>n.id!==this.currentNoteId);this.saveNotes();this.hideDeleteConfirm();if(this.notes.length>0){this.renderNotesList();this.loadNote(this.notes[0].id)}else{this.createDefaultNote();this.renderNotesList();this.loadNote(this.notes[0].id)}}exportCurrentNote(){if(!this.currentNoteId)return;const note=this.notes.find(n=>n.id===this.currentNoteId);if(!note)return;const content=`# ${note.title}\n\n${note.content.replace(/<[^>]*>/g,'')}`;const blob=new Blob([content],{type:'text/markdown'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`${note.title||'笔记'}.md`;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url)}toggleTheme(){const currentTheme=document.documentElement.getAttribute('data-theme');const newTheme=currentTheme==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',newTheme);localStorage.setItem('theme',newTheme);const icon=this.themeToggle.querySelector('i');icon.className=newTheme==='dark'?'fas fa-sun':'fas fa-moon'}toggleSearch(){this.searchBar.classList.toggle('active');if(this.searchBar.classList.contains('active')){this.searchInput.focus()}else{this.clearSearchInput()}}searchNotes(query){if(!query.trim()){this.renderNotesList();return}const filteredNotes=this.notes.filter(note=>note.title.toLowerCase().includes(query.toLowerCase())||note.content.toLowerCase().includes(query.toLowerCase()));this.renderNotesList(filteredNotes)}clearSearchInput(){this.searchInput.value='';this.renderNotesList();this.searchBar.classList.remove('active')}handleToolbarAction(e){e.preventDefault();const action=e.currentTarget.dataset.action;if(action==='undo'||action==='redo'){document.execCommand(action)}else{document.execCommand(action,false,null)}this.noteEditor.focus();this.handleNoteChange()}updateWordCount(){const text=this.noteEditor.innerText||'';const wordCount=text.trim().split(/\s+/).filter(word=>word.length>0).length;this.wordCount.textContent=wordCount}updateLastSaved(timestamp){const date=new Date(timestamp);this.lastSaved.textContent=date.toLocaleString('zh-CN')}startAutoSave(){this.autoSaveInterval=setInterval(()=>{if(this.isEditing){this.saveCurrentNote()}},30000)}handleKeyboardShortcut(e){if(e.ctrlKey&&e.key==='s'){e.preventDefault();this.saveCurrentNote()}if(e.ctrlKey&&e.key==='n'){e.preventDefault();this.createNewNote()}if(e.ctrlKey&&e.key==='f'){e.preventDefault();this.toggleSearch()}if(e.key==='Escape'&&this.searchBar.classList.contains('active')){this.clearSearchInput()}}}document.addEventListener('DOMContentLoaded',()=>{const savedTheme=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',savedTheme);const themeToggle=document.getElementById('theme-toggle');const icon=themeToggle.querySelector('i');icon.className=savedTheme==='dark'?'fas fa-sun':'fas fa-moon';new NotePad()});document.addEventListener('dragover',(e)=>{e.preventDefault()});document.addEventListener('drop',(e)=>{e.preventDefault()});const utils={debounce(func,wait){let timeout;return function executedFunction(...args){const later=()=>{clearTimeout(timeout);func(...args)};clearTimeout(timeout);timeout=setTimeout(later,wait)}},throttle(func,limit){let inThrottle;return function(){const args=arguments;const context=this;if(!inThrottle){func.apply(context,args);inThrottle=true;setTimeout(()=>inThrottle=false,limit)}}}};window.utils=utils;
+class NotePad {
+  constructor() {
+    this.notes = JSON.parse(localStorage.getItem("notes")) || [];
+    this.currentNoteId = null;
+    this.isEditing = false;
+    this.autoSaveInterval = null;
+    this.initializeElements();
+    this.bindEvents();
+    this.loadNotes();
+    this.createDefaultNote();
+  }
+  initializeElements() {
+    this.notesList = document.getElementById("notes-list");
+    this.noteTitle = document.getElementById("note-title");
+    this.noteEditor = document.getElementById("note-editor");
+    this.wordCount = document.getElementById("word-count");
+    this.lastSaved = document.getElementById("last-saved");
+    this.newNoteBtn = document.getElementById("new-note-btn");
+    this.saveNoteBtn = document.getElementById("save-note");
+    this.deleteNoteBtn = document.getElementById("delete-note");
+    this.exportNoteBtn = document.getElementById("export-note");
+    this.themeToggle = document.getElementById("theme-toggle");
+    this.searchToggle = document.getElementById("search-toggle");
+    this.searchInput = document.getElementById("search-input");
+    this.clearSearch = document.getElementById("clear-search");
+    this.searchBar = document.getElementById("search-bar");
+    this.toolbarBtns = document.querySelectorAll(".toolbar-btn");
+    this.confirmModal = document.getElementById("confirm-modal");
+    this.confirmDelete = document.getElementById("confirm-delete");
+    this.cancelDelete = document.getElementById("cancel-delete");
+  }
+  bindEvents() {
+    this.noteTitle.addEventListener("input", () => this.handleNoteChange());
+    this.noteEditor.addEventListener("input", () => this.handleNoteChange());
+    this.noteEditor.addEventListener("keyup", () => this.updateWordCount());
+    this.newNoteBtn.addEventListener("click", () => this.createNewNote());
+    this.saveNoteBtn.addEventListener("click", () => this.saveCurrentNote());
+    this.deleteNoteBtn.addEventListener("click", () =>
+      this.showDeleteConfirm(),
+    );
+    this.exportNoteBtn.addEventListener("click", () =>
+      this.exportCurrentNote(),
+    );
+    this.themeToggle.addEventListener("click", () => this.toggleTheme());
+    this.searchToggle.addEventListener("click", () => this.toggleSearch());
+    this.searchInput.addEventListener("input", (e) =>
+      this.searchNotes(e.target.value),
+    );
+    this.clearSearch.addEventListener("click", () => this.clearSearchInput());
+    this.toolbarBtns.forEach((btn) => {
+      btn.addEventListener("click", (e) => this.handleToolbarAction(e));
+    });
+    this.confirmDelete.addEventListener("click", () =>
+      this.deleteCurrentNote(),
+    );
+    this.cancelDelete.addEventListener("click", () => this.hideDeleteConfirm());
+    document.addEventListener("keydown", (e) => this.handleKeyboardShortcut(e));
+    window.addEventListener("beforeunload", () => this.saveCurrentNote());
+    this.startAutoSave();
+  }
+  createDefaultNote() {
+    if (this.notes.length === 0) {
+      const defaultNote = {
+        id: this.generateId(),
+        title: "欢迎使用智能记事本",
+        content:
+          "这是你的第一条笔记！你可以：\n\n• 创建新笔记\n• 编辑现有笔记\n• 搜索笔记内容\n• 导出笔记\n• 切换主题模式\n\n开始记录你的想法吧！",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      this.notes.push(defaultNote);
+      this.saveNotes();
+    }
+  }
+  generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  }
+  loadNotes() {
+    this.renderNotesList();
+    if (this.notes.length > 0) {
+      this.loadNote(this.notes[0].id);
+    }
+  }
+  renderNotesList(notesToRender = this.notes) {
+    this.notesList.innerHTML = "";
+    notesToRender.forEach((note) => {
+      const noteElement = this.createNoteListItem(note);
+      this.notesList.appendChild(noteElement);
+    });
+  }
+  createNoteListItem(note) {
+    const noteElement = document.createElement("div");
+    noteElement.className = "note-item";
+    noteElement.dataset.noteId = note.id;
+    const preview = this.getTextPreview(note.content);
+    const date = this.formatDate(note.updatedAt);
+    noteElement.innerHTML = `<div class="note-item-title">${note.title || "无标题"}</div><div class="note-item-preview">${preview}</div><div class="note-item-date">${date}</div>`;
+    noteElement.addEventListener("click", () => this.loadNote(note.id));
+    return noteElement;
+  }
+  getTextPreview(content) {
+    const text = content.replace(/<[^>]*>/g, "").replace(/\n/g, " ");
+    return text.length > 100 ? text.substring(0, 100) + "..." : text;
+  }
+  formatDate(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (diffDays === 1) {
+      return "今天";
+    } else if (diffDays === 2) {
+      return "昨天";
+    } else if (diffDays <= 7) {
+      return `${diffDays - 1}天前`;
+    } else {
+      return date.toLocaleDateString("zh-CN");
+    }
+  }
+  loadNote(noteId) {
+    const note = this.notes.find((n) => n.id === noteId);
+    if (!note) return;
+    this.currentNoteId = noteId;
+    this.noteTitle.value = note.title || "";
+    this.noteEditor.innerHTML = note.content || "";
+    this.updateActiveNote();
+    this.updateWordCount();
+    this.updateLastSaved(note.updatedAt);
+    this.isEditing = false;
+  }
+  updateActiveNote() {
+    document.querySelectorAll(".note-item").forEach((item) => {
+      item.classList.remove("active");
+    });
+    const activeItem = document.querySelector(
+      `[data-note-id="${this.currentNoteId}"]`,
+    );
+    if (activeItem) {
+      activeItem.classList.add("active");
+    }
+  }
+  createNewNote() {
+    if (this.isEditing) {
+      this.saveCurrentNote();
+    }
+    const newNote = {
+      id: this.generateId(),
+      title: "",
+      content: "",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    this.notes.unshift(newNote);
+    this.saveNotes();
+    this.renderNotesList();
+    this.loadNote(newNote.id);
+    this.noteTitle.focus();
+  }
+  handleNoteChange() {
+    this.isEditing = true;
+    this.showUnsaved();
+    this.updateWordCount();
+  }
+  saveCurrentNote() {
+    if (!this.currentNoteId) return;
+    const note = this.notes.find((n) => n.id === this.currentNoteId);
+    if (!note) return;
+    note.title = this.noteTitle.value.trim() || "无标题";
+    note.content = this.noteEditor.innerHTML;
+    note.updatedAt = new Date().toISOString();
+    this.saveNotes();
+    this.renderNotesList();
+    this.updateActiveNote();
+    this.updateLastSaved(note.updatedAt);
+    this.isEditing = false;
+  }
+  saveNotes() {
+    localStorage.setItem("notes", JSON.stringify(this.notes));
+  }
+  showDeleteConfirm() {
+    if (!this.currentNoteId) return;
+    this.confirmModal.classList.add("active");
+  }
+  hideDeleteConfirm() {
+    this.confirmModal.classList.remove("active");
+  }
+  deleteCurrentNote() {
+    if (!this.currentNoteId) return;
+    this.notes = this.notes.filter((n) => n.id !== this.currentNoteId);
+    this.saveNotes();
+    this.hideDeleteConfirm();
+    if (this.notes.length > 0) {
+      this.renderNotesList();
+      this.loadNote(this.notes[0].id);
+    } else {
+      this.createDefaultNote();
+      this.renderNotesList();
+      this.loadNote(this.notes[0].id);
+    }
+  }
+  exportCurrentNote() {
+    if (!this.currentNoteId) return;
+    const note = this.notes.find((n) => n.id === this.currentNoteId);
+    if (!note) return;
+    const content = `# ${note.title}\n\n${note.content.replace(/<[^>]*>/g, "")}`;
+    const blob = new Blob([content], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${note.title || "笔记"}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+  toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute("data-theme");
+    const newTheme = currentTheme === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", newTheme);
+    localStorage.setItem("theme", newTheme);
+    const icon = this.themeToggle.querySelector("i");
+    icon.className = newTheme === "dark" ? "fas fa-sun" : "fas fa-moon";
+  }
+  toggleSearch() {
+    this.searchBar.classList.toggle("active");
+    if (this.searchBar.classList.contains("active")) {
+      this.searchInput.focus();
+    } else {
+      this.clearSearchInput();
+    }
+  }
+  searchNotes(query) {
+    if (!query.trim()) {
+      this.renderNotesList();
+      return;
+    }
+    const filteredNotes = this.notes.filter(
+      (note) =>
+        note.title.toLowerCase().includes(query.toLowerCase()) ||
+        note.content.toLowerCase().includes(query.toLowerCase()),
+    );
+    this.renderNotesList(filteredNotes);
+  }
+  clearSearchInput() {
+    this.searchInput.value = "";
+    this.renderNotesList();
+    this.searchBar.classList.remove("active");
+  }
+  handleToolbarAction(e) {
+    e.preventDefault();
+    const action = e.currentTarget.dataset.action;
+    if (action === "undo" || action === "redo") {
+      document.execCommand(action);
+    } else {
+      document.execCommand(action, false, null);
+    }
+    this.noteEditor.focus();
+    this.handleNoteChange();
+  }
+  updateWordCount() {
+    const text = this.noteEditor.innerText || "";
+    const wordCount = text
+      .trim()
+      .split(/\s+/)
+      .filter((word) => word.length > 0).length;
+    this.wordCount.textContent = wordCount;
+  }
+  updateLastSaved(timestamp) {
+    const date = new Date(timestamp);
+    this.lastSaved.textContent = date.toLocaleString("zh-CN");
+    this.lastSaved.classList.remove("unsaved");
+  }
+
+  showUnsaved() {
+    this.lastSaved.textContent = "未保存";
+    this.lastSaved.classList.add("unsaved");
+  }
+  startAutoSave() {
+    this.autoSaveInterval = setInterval(() => {
+      if (this.isEditing) {
+        this.saveCurrentNote();
+      }
+    }, 30000);
+  }
+  handleKeyboardShortcut(e) {
+    if (e.ctrlKey && e.key === "s") {
+      e.preventDefault();
+      this.saveCurrentNote();
+    }
+    if (e.ctrlKey && e.key === "n") {
+      e.preventDefault();
+      this.createNewNote();
+    }
+    if (e.ctrlKey && e.key === "f") {
+      e.preventDefault();
+      this.toggleSearch();
+    }
+    if (e.ctrlKey && e.key === "d") {
+      e.preventDefault();
+      this.toggleTheme();
+    }
+    if (e.key === "Escape" && this.searchBar.classList.contains("active")) {
+      this.clearSearchInput();
+    }
+  }
+}
+document.addEventListener("DOMContentLoaded", () => {
+  const savedTheme = localStorage.getItem("theme") || "light";
+  document.documentElement.setAttribute("data-theme", savedTheme);
+  const themeToggle = document.getElementById("theme-toggle");
+  const icon = themeToggle.querySelector("i");
+  icon.className = savedTheme === "dark" ? "fas fa-sun" : "fas fa-moon";
+  new NotePad();
+});
+document.addEventListener("dragover", (e) => {
+  e.preventDefault();
+});
+document.addEventListener("drop", (e) => {
+  e.preventDefault();
+});
+const utils = {
+  debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  },
+  throttle(func, limit) {
+    let inThrottle;
+    return function () {
+      const args = arguments;
+      const context = this;
+      if (!inThrottle) {
+        func.apply(context, args);
+        inThrottle = true;
+        setTimeout(() => (inThrottle = false), limit);
+      }
+    };
+  },
+};
+window.utils = utils;
